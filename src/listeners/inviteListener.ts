@@ -24,9 +24,10 @@ export class InviteListener extends Listener {
 
 		const result = await this.containsInvite(message);
 		if (result.hasLink) {
-			message.delete().catch(() => console.log(`Could not delete invite message.`));
+			message.delete().catch(() => message.client.logger.error(`Could not delete invite message.`));
 			message.client.emit('caseCreate', message, message.guild, message.client.user, message.member!.user, `Anti-Invite (${result.link})`, 'Deleted Message', '#ff8300');
-			message.author.send('Invites are not permitted in this server').catch(() => console.log(`Could not send DM about invite URLs to \`${message.author.tag}\``));
+			message.author.send('Invites are not permitted in this server')
+				.catch(() => message.client.logger.error(`Could not send DM about invite URLs to \`${message.author.tag}\``));
 		}
 	}
 
@@ -62,7 +63,6 @@ export class InviteListener extends Listener {
 
 		if (messageDiscordGGLinks.length > 0) {
 			for (const link of messageDiscordGGLinks) {
-				console.log(`testing link ${link}`);
 				if (/discord\.io\/[a-zA-Z0-9]+/.test(link.toLowerCase())) {
 					messageHasDiscordGGLink = true;
 					targetLink = link;
@@ -76,12 +76,10 @@ export class InviteListener extends Listener {
 
 				if (!invite) continue;
 
-				console.log(`Checking guild id ${invite.guild!.id} with invite ${link}`);
-
 				if (invite.guild!.id === message.guild!.id) continue;
 
 				if ((await getSettings(message.guild!, 'antiInvite-whitelistedGuilds'))!
-					.every((element) => element !== invite.guild!.id)) {
+					.every(value => value !== invite.guild!.id)) {
 					messageHasDiscordGGLink = true;
 					targetLink = link;
 					break;

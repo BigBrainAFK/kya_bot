@@ -1,9 +1,9 @@
 import { Command } from '@sapphire/framework';
 import { MessageAttachment } from 'discord.js';
 import { treeView, treeNode } from 'simple-text-tree';
-import { AllSettings, BooleanSettings, NumberSettings, SettingsOptionBoolean, SettingsOptionNumber,
-	SettingsOptionsStringArray, SettingsOptionTopic, StringArraySettings, TopicSettings } from '../util/constants.js';
-import { getSettings, hasAtLeastPermissionLevel, updateSettings, formatTopic, buildTopicTree } from '../util/utility.js';
+import { AllSettings } from '../util/constants.js';
+import { getSettings, hasAtLeastPermissionLevel, updateSettings, formatTopic, buildTopicTree,
+	isSettingTopic, isSettingBoolean, isSettingNumber, isSettingStringArray } from '../util/utility.js';
 
 export class ConfigCommand extends Command {
 	public constructor(context: Command.Context, options: Command.Options) {
@@ -95,13 +95,14 @@ export class ConfigCommand extends Command {
 	async show(interaction: Command.ChatInputInteraction) {
 		const option = interaction.options.getString('option');
 
-		if (!option) { // FIX ME
+		// All options processing
+		if (!option) {
 			const allSettingsResult = new Array<treeNode>;
 
 			for (const currentSetting of AllSettings.sort()) {
 				let result: treeNode;
-				if (StringArraySettings.includes(currentSetting)) {
-					const data = await getSettings(interaction.guild!, currentSetting as SettingsOptionsStringArray);
+				if (isSettingStringArray(currentSetting)) {
+					const data = await getSettings(interaction.guild!, currentSetting);
 
 					if (data.length > 1) {
 						result = {
@@ -115,19 +116,19 @@ export class ConfigCommand extends Command {
 						};
 					}
 				}
-				else if (TopicSettings.includes(currentSetting)) {
-					const data = await getSettings(interaction.guild!, currentSetting as SettingsOptionTopic);
+				else if (isSettingTopic(currentSetting)) {
+					const data = await getSettings(interaction.guild!, currentSetting);
 					result = buildTopicTree(data);
 				}
-				else if (BooleanSettings.includes(currentSetting)) {
-					const data = await getSettings(interaction.guild!, currentSetting as SettingsOptionBoolean);
+				else if (isSettingBoolean(currentSetting)) {
+					const data = await getSettings(interaction.guild!, currentSetting);
 
 					result = {
 						text: `${currentSetting}: ${data}`
 					};
 				}
-				else if (NumberSettings.includes(currentSetting)) {
-					const data = await getSettings(interaction.guild!, currentSetting as SettingsOptionNumber);
+				else if (isSettingNumber(currentSetting)) {
+					const data = await getSettings(interaction.guild!, currentSetting);
 
 					result = {
 						text: `${currentSetting}: ${data}`
@@ -157,11 +158,12 @@ export class ConfigCommand extends Command {
 
 			return interaction.editReply(`Current configuration\n\`\`\`regex\n${treeText}\`\`\``)
 		}
+		// Single setting processing
 		else {
 			let replyString = `Setting \`${option}\` could not be processed.`;
 
-			if (StringArraySettings.includes(option)) {
-				const stringArrResult = await getSettings(interaction.guild!, option as SettingsOptionsStringArray);
+			if (isSettingStringArray(option)) {
+				const stringArrResult = await getSettings(interaction.guild!, option);
 				if (!stringArrResult.length) return interaction.editReply(`The setting \`${option}\` is empty.`);
 
 				const concated = stringArrResult.join('\n');
@@ -180,8 +182,8 @@ export class ConfigCommand extends Command {
 		
 				replyString = `Setting \`${option}\`:\n\`\`\`regex\n${concated}\`\`\``;
 			}
-			else if (TopicSettings.includes(option)) {
-				const topicResult = await getSettings(interaction.guild!, option as SettingsOptionTopic);
+			else if (isSettingTopic(option)) {
+				const topicResult = await getSettings(interaction.guild!, option);
 				if (!topicResult.length) return interaction.editReply(`The setting \`${option}\` is empty.`);
 
 				const treeText = treeView([buildTopicTree(topicResult)]);
@@ -200,13 +202,13 @@ export class ConfigCommand extends Command {
 
 				replyString = `Setting \`${option}\`:\n\`\`\`regex\n${treeText}\`\`\``;
 			}
-			else if (BooleanSettings.includes(option)) {
-				const boolResult = await getSettings(interaction.guild!, option as SettingsOptionBoolean);
+			else if (isSettingBoolean(option)) {
+				const boolResult = await getSettings(interaction.guild!, option);
 		
 				replyString = `Setting \`${option}\` is set to \`${boolResult}\`.`;
 			}
-			else if (NumberSettings.includes(option)) {
-				const numberResult = await getSettings(interaction.guild!, option as SettingsOptionNumber);
+			else if (isSettingNumber(option)) {
+				const numberResult = await getSettings(interaction.guild!, option);
 		
 				replyString = `Setting \`${option}\` is set to \`${numberResult}\`.`;
 			}
@@ -221,30 +223,30 @@ export class ConfigCommand extends Command {
 		let option, err;
 
 		// check if the option value is a boolean or number option and update accordingly
-		if (BooleanSettings.includes(temp)) {
-			option = temp as SettingsOptionBoolean;
+		if (isSettingBoolean(temp)) {
+			option = temp;
 			const { error } = await updateSettings(interaction.guild!, option, Boolean(value), 'replace');
 			err = error;
 		}
-		else if (NumberSettings.includes(temp)) {
-			option = temp as SettingsOptionNumber;
+		else if (isSettingNumber(temp)) {
+			option = temp;
 			const { error } = await updateSettings(interaction.guild!, option, Number(value), 'replace');
 			err = error;
 		}
-		else if (TopicSettings.includes(temp)) {
+		else if (isSettingTopic(temp)) {
 			let data = formatTopic(value);
 
 			if (!data) return interaction.editReply(`There was an error formatting the data for \`${temp}\`.`);
 
-			option = temp as SettingsOptionTopic;
+			option = temp;
 			const { error } = await updateSettings(interaction.guild!, option, data, 'replace');
 			err = error;
 		}
-		else {
-			return interaction.editReply(`Internal error when checking type of \`${temp}\``);
+		else if (isSettingStringArray(option)) {
+			return interaction.editReply(`The \`set\` function isnt available on \`${option}\``)
 		}
 
-		if (err.length) return interaction.editReply(err);
+		if (err && err.length) return interaction.editReply(err);
 		return interaction.editReply(`Successfully updated \`${option}\` to \`${value}\``);
 	}
 
@@ -254,9 +256,9 @@ export class ConfigCommand extends Command {
 
 		if (!option) return interaction.editReply('Error: received empty option parameter.');
 
-		if (StringArraySettings.includes(option)) {
+		if (isSettingStringArray(option)) {
 			// check if value is already in the string array. if so error and return
-			if ((await getSettings(interaction.guild!, option as SettingsOptionsStringArray))
+			if ((await getSettings(interaction.guild!, option))
 				.some(find => find === value)) {
 					return interaction.editReply(`\`${value}\` is already set in \`${option}\`.`);
 			}
@@ -264,24 +266,27 @@ export class ConfigCommand extends Command {
 			if (value.length > 255) return interaction.editReply('The provided value is too long.');
 	
 			const { error } =
-				await updateSettings(interaction.guild!, option as SettingsOptionsStringArray, [value], 'add');
+				await updateSettings(interaction.guild!, option, [value], 'add');
 			if (error.length) return interaction.editReply(error);
 		}
-		else if (TopicSettings.includes(option)) {
+		else if (isSettingTopic(option)) {
 			let data = formatTopic(value);
 
 			if (!data) return interaction.editReply(`There was an error formatting the data for \`${option}\`.`);
 
 			for (let i = 0; i <= data.length - 1; i++) {
 				// check if value is already in the string array. if so error and return
-				if ((await getSettings(interaction.guild!, option as SettingsOptionTopic))
+				if ((await getSettings(interaction.guild!, option))
 					.some(find => find.value === value)) {
 						return interaction.editReply(`\`${value}\` is already set in \`${option}\`.`);
 				}
 			}
 	
-			const { error } = await updateSettings(interaction.guild!, option as SettingsOptionTopic, data, 'add');
+			const { error } = await updateSettings(interaction.guild!, option, data, 'add');
 			if (error.length) return interaction.editReply(error);
+		}
+		else if (isSettingBoolean(option) || isSettingNumber(option)) {
+			return interaction.editReply(`The \`add\` function isnt available on \`${option}\``)
 		}
 		return interaction.editReply(`Successfully added \`${value}\` to \`${option}\`.`);
 	}
@@ -292,31 +297,34 @@ export class ConfigCommand extends Command {
 
 		if (!option) return interaction.editReply('Error: received empty option parameter.');
 
-		if (StringArraySettings.includes(option)) {
+		if (isSettingStringArray(option)) {
 			// check if the value to remove does exist. if not error and return
-			if (!(await getSettings(interaction.guild!, option as SettingsOptionsStringArray))
+			if (!(await getSettings(interaction.guild!, option))
 				.some(find => find === value)){
 					return interaction.editReply(`\`${value}\` was not found in \`${option}\`.`);
 			}
 	
-			const { error } = await updateSettings(interaction.guild!, option as SettingsOptionsStringArray, [value], 'remove');
+			const { error } = await updateSettings(interaction.guild!, option, [value], 'remove');
 			if (error.length) return interaction.editReply(error);
 		}
-		else if (TopicSettings.includes(option)) {
+		else if (isSettingTopic(option)) {
 			let data = formatTopic(value);
 
 			if (!data) return interaction.editReply(`There was an error formatting the data for \`${option}\`.`);
 
 			for (let i = 0; i <= data.length - 1; i++) {
 				// check if value is already in the string array. if so error and return
-				if (!(await getSettings(interaction.guild!, option as SettingsOptionTopic))
+				if (!(await getSettings(interaction.guild!, option))
 					.some(find => find.value === value)) {
 						return interaction.editReply(`\`${value}\` was not found in \`${option}\`.`);
 				}
 			}
 	
-			const { error } = await updateSettings(interaction.guild!, option as SettingsOptionTopic, data, 'remove');
+			const { error } = await updateSettings(interaction.guild!, option, data, 'remove');
 			if (error.length) return interaction.editReply(error);
+		}
+		else if (isSettingBoolean(option) || isSettingNumber(option)) {
+			return interaction.editReply(`The \`remove\` function isnt available on \`${option}\``)
 		}
 		return interaction.editReply(`Successfully removed \`${value}\` to \`${option}\`.`);
 	}

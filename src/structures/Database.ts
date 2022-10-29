@@ -2,6 +2,7 @@ import { DataTypes, Sequelize } from '@sequelize/core';
 import type { Model, ModelStatic } from '@sequelize/core';
 import { initialTopics } from '../util/constants.js';
 import type { Guild } from 'discord.js';
+import type { KyaClient } from './KyaClient.js';
 
 type DatabaseOptions = {
 	host: string,
@@ -12,11 +13,12 @@ type DatabaseOptions = {
 }
 
 class PostgresDatabase {
+	private _client: KyaClient;
 	private _dbConn: Sequelize;
 	private _guilds;
 	private _topic;
 
-	constructor(options: DatabaseOptions) {
+	constructor(client: KyaClient, options: DatabaseOptions) {
 		this._dbConn = new Sequelize(
 			{
 				...options,
@@ -24,6 +26,8 @@ class PostgresDatabase {
 				logging: false
 			}
 		)
+
+		this._client = client;
 
 		this._guilds = this._dbConn.define('guilds', {
 			// Guild ID
@@ -147,14 +151,25 @@ class PostgresDatabase {
 	}
 
 	public async createGuild(guild: Guild): Promise<void> {
-		await global.db.guilds.create({
+		await guild.client.database.guilds.create({
 			id: guild.id,
 			topics: initialTopics
 		}, {
 			include: [{
 				association: 'topics'
 			}]
-		}).catch(() => {}); // voided as it should be impossible to fail except for the dual/tripple creations
+		}).catch(this._client.logger.error); // voided as it should be impossible to fail except for the dual/tripple creations
+	}
+
+	public async getGuildRow(guild: Guild): Promise<Model<any, any>> {
+		const entry = await this._guilds.findByPk(guild.id, { include: [{ association: 'topics' }]});
+
+		if (!entry) {
+			await this.createGuild(guild);
+			return this.getGuildRow(guild);
+		}
+
+		return entry;
 	}
 }
 

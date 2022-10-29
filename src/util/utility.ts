@@ -1,22 +1,22 @@
-import { SapphireClient } from '@sapphire/framework';
 import { Message, Guild, GuildMember, CommandInteraction, Team } from 'discord.js';
 import type { treeNode } from 'simple-text-tree';
+import { KyaClient } from '../structures/KyaClient.js';
 import { RateLimit, RateLimitManager } from '../structures/RateLimitManager.js';
-import type { ActionOptions, SettingsOptionsStringArray, SettingsOptionBoolean,
-	SettingsOptionNumber, UpdateData, SettingsOptionTopic, Topic } from './constants.js';
+import { ActionOptions, SettingsOptionsStringArray, SettingsOptionBoolean, SettingsOptionNumber, UpdateData,
+	SettingsOptionTopic, Topic, StringArraySettings, BooleanSettings, NumberSettings, TopicSettings } from './constants.js';
 
 async function hasAtLeastPermissionLevel(message: Message | CommandInteraction, level: number): Promise<boolean> {
-	const { permission } = await global.permLevels.run(message, level);
+	const { permission } = await message.client.permLevels.run(message, level);
 	return permission;
 };
 
-async function getSettings(instance: SapphireClient, setting: 'owners'): Promise<string[]>;
+async function getSettings(instance: KyaClient, setting: 'owners'): Promise<string[]>;
 async function getSettings(instance: Guild, setting: SettingsOptionsStringArray): Promise<string[]>;
 async function getSettings(instance: Guild, setting: SettingsOptionBoolean): Promise<boolean>;
 async function getSettings(instance: Guild, setting: SettingsOptionNumber): Promise<number>;
 async function getSettings(instance: Guild, setting: SettingsOptionTopic): Promise<Topic[]>;
-async function getSettings(instance: Guild | SapphireClient, setting: any): Promise<any> {
-	if (instance instanceof SapphireClient) {
+async function getSettings(instance: Guild | KyaClient, setting: any): Promise<any> {
+	if (instance instanceof KyaClient) {
 		await instance.application!.fetch();
 		if (instance.application!.owner instanceof Team) {
 			return instance.application!.owner.members.map((val) => val.id);
@@ -25,14 +25,9 @@ async function getSettings(instance: Guild | SapphireClient, setting: any): Prom
 	}
 
 	if (instance instanceof Guild) {
-		const entry = await global.db.guilds.findByPk(instance.id, { include: [{ association: 'topics' }] });
+		const entry = await instance.client.database.getGuildRow(instance)
 
-		if (!entry) {
-			await global.db.createGuild(instance);
-			return await getSettings(instance, setting);
-		}
-		
-		if (entry) return entry[setting as keyof typeof entry];
+		return entry.getDataValue(setting);
 	}
 }
 
@@ -41,62 +36,70 @@ async function updateSettings(guild: Guild, setting: SettingsOptionTopic, data: 
 async function updateSettings(guild: Guild, setting: SettingsOptionBoolean, data: boolean, action: 'replace'): Promise<UpdateData>
 async function updateSettings(guild: Guild, setting: SettingsOptionNumber, data: number, action: 'replace'): Promise<UpdateData>
 async function updateSettings(guild: Guild, setting: any, data: any, action: ActionOptions): Promise<UpdateData> {
-	const entry = await global.db.guilds.findByPk(guild.id, { include: [{ association: 'topics' }] });
+	const entry = await guild.client.database.getGuildRow(guild);
 
-	if (!entry) {
-		await global.db.createGuild(guild);
-		return await updateSettings(guild, setting, data, action);
-	}
+	let result = true;
+	let error = '';
+	const catchFunc = (reason: string) => {
+		error = reason;
+		result = false;
+	};
 
 	switch (action) {
 		case 'add':
 			if (isTopic(data)) {
-				for (const single of data) {
-					global.db.topic.create({
+				addTopicLoop: for (const single of data) {
+					await guild.client.database.topic.create({
 						guildId: guild.id,
 						name: single.name,
 						value: single.value,
 						text: single.text
-					});
+					}).catch(catchFunc);
+
+					if (!result) break addTopicLoop;
 				}
 			}
 			else if (isStringArray(data)) {
-				(entry[setting as keyof typeof entry] as String[]) = 
-					(entry[setting as keyof typeof entry] as String[]).concat(data);
+				await entry.update(setting, entry.getDataValue(setting).concat(data)).catch(catchFunc);
 			}
 			break;
 		case 'remove':
 			if (isTopic(data)) {
-				for (const single of data) {
-					await global.db.topic.destroy({
+				removeTopicLoop: for (const single of data) {
+					await guild.client.database.topic.destroy({
 						where: {
 							value: single.value
 						}
-					});
+					}).catch(catchFunc);
+
+					if (!result) break removeTopicLoop;
 				}
 			}
 			else if (isStringArray(data)) {
-				(entry[setting as keyof typeof entry] as String[]) =
-					(entry[setting as keyof typeof entry] as String[]).filter(el => !(data).includes(el));
+				await entry
+					.update(setting, entry.getDataValue(setting).filter((value: string) => !data.includes(value)))
+					.catch(catchFunc);
 			}
 			break;
 		case 'replace':
 			if (isTopic(data)) {
-				for (const single of data) {
-					await global.db.topic.update(single, {
+				replaceTopicLoop: for (const single of data) {
+					await guild.client.database.topic.update(single, {
 						where: {
 							value: single.value
 						}
-					})
+					}).catch(catchFunc);
+
+					if (!result) break replaceTopicLoop;
 				}
 			}
 			else {
-				entry[setting as keyof typeof entry] = data;
+				await entry.update(setting, data).catch(catchFunc);
 			}
 			break;
 	}
 
-	return { result: true, error: '' };
+	return { result, error };
 }
 
 async function getTopic(guild: Guild, topic: string): Promise<string> {
@@ -115,14 +118,14 @@ async function hasModRole(guild: Guild, member: GuildMember): Promise<boolean> {
 }
 
 async function getScamRatelimit(guild: Guild, userid: string): Promise<RateLimit> {
-	if (!global.rateLimits.has(guild.id))
-		global.rateLimits.set(guild.id,
+	if (!guild.client.rateLimits.has(guild.id))
+		guild.client.rateLimits.set(guild.id,
 			new RateLimitManager(
 				await getSettings(guild, 'antiScam-scamLinksAllowed'),
 				await getSettings(guild, 'antiScam-timePeriod') * 1000)
 			)
 
-	return global.rateLimits.get(guild.id)!.acquire(userid);
+	return guild.client.rateLimits.get(guild.id)!.acquire(userid);
 }
 
 
@@ -150,6 +153,26 @@ function diceCoefficient(str1: String, str2: String) {
 	const bigrams1 = getBigrams(str1);
 	const bigrams2 = getBigrams(str2);
 	return (2 * intersect(bigrams1, bigrams2).size) / (bigrams1.size + bigrams2.size);
+}
+
+function isSettingStringArray(input: any): input is SettingsOptionsStringArray {
+	return typeof input === 'string'
+		&& StringArraySettings.includes(input);
+}
+
+function isSettingBoolean(input: any): input is SettingsOptionBoolean {
+	return typeof input === 'string'
+		&& BooleanSettings.includes(input);
+}
+
+function isSettingNumber(input: any): input is SettingsOptionNumber {
+	return typeof input === 'string'
+		&& NumberSettings.includes(input);
+}
+
+function isSettingTopic(input: any): input is SettingsOptionTopic {
+	return typeof input === 'string'
+		&& TopicSettings.includes(input);
 }
 
 function isStringArray(input: any): input is String[] {
@@ -224,5 +247,9 @@ export {
 	getScamRatelimit,
 	formatTopic,
 	buildTopicTree,
-	diceCoefficient
+	diceCoefficient,
+	isSettingBoolean,
+	isSettingNumber,
+	isSettingStringArray,
+	isSettingTopic
 };

@@ -78,7 +78,7 @@ export class AutocompleteHandler extends InteractionHandler {
 							if (option === 'antiScam-urlLowerBound') {
 								return this.some(
 									tempArr.map(
-										(_e, i) => (i / 10).toString()
+										(_, i) => (i / 10).toString()
 									)
 									.map(
 										value => ({ name: value, value })
@@ -89,7 +89,7 @@ export class AutocompleteHandler extends InteractionHandler {
 							// otherwise just list 1 to 10 (nothing should need more than this)
 							return this.some(
 								tempArr.map(
-									(_e, i) => (i + 1).toString()
+									(_, i) => (i + 1).toString()
 								)
 								.map(
 									value => ({ name: value, value })
@@ -104,7 +104,11 @@ export class AutocompleteHandler extends InteractionHandler {
 					return this.none();
 				}
 				case 'inquiry':
-					const rawData = await global.db.topic.findAll({
+					if (!interaction.guild) {	
+						await interaction.client.guilds.fetch(interaction.guildId!);
+					}
+
+					const rawData = await interaction.guild!.client.database.topic.findAll({
 						where: {
 							guildId: interaction.guildId
 						}

@@ -17,9 +17,10 @@ export class InviteListener extends Listener {
 
 		const result = await this.containsScamURL(message);
 		if (result.hasScam) {
-			message.delete().catch(() => console.log(`Could not delete scam message.`));
+			message.delete().catch(() => message.client.logger.error(`Could not delete scam message.`));
 			message.client.emit('caseCreate', message, message.guild, message.client.user, message.author, `Anti-Scam (${result.scamURL})`, 'Deleted Message', '#ff8300');
-			message.author.send('Scam URLs are not permitted in this server').catch(() => console.log(`Could not send DM about scam URLs to \`${message.author.tag}\``));
+			message.author.send('Scam URLs are not permitted in this server')
+				.catch(() => message.client.logger.error(`Could not send DM about scam URLs to \`${message.author.tag}\``));
 
 			const ratelimit = await getScamRatelimit(message.guild, message.author.id);  //reimplement ratelimit for scam
 
@@ -48,7 +49,7 @@ export class InviteListener extends Listener {
 		}
 
 		main: for (const url of messageLinks) {
-			for (const link of await getSettings(message.guild!, 'antiScam-guardedURLs')) {  //replace with postgre settings
+			for (const link of await getSettings(message.guild!, 'antiScam-guardedURLs')) {
 				const domainRegex = /((?:[-\w]{0,61})*?(?:\.\w{2,4}){1,2})\b/mi;
 
 				const match = url.match(domainRegex);
