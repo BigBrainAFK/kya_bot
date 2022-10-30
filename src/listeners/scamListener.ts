@@ -1,6 +1,7 @@
 import { Listener } from '@sapphire/framework';
 import type { Message } from 'discord.js';
-import { getSettings, hasAtLeastPermissionLevel, getScamRatelimit, diceCoefficient } from '../util/utility.js';
+import { getSettings } from '../util/Settings.js';
+import { getScamRatelimit, diceCoefficient, hasAtLeastPermissionLevel } from '../util/Utility.js';
 
 export class InviteListener extends Listener {
 	public constructor(context: Listener.Context, options: Listener.Options) {
@@ -13,7 +14,7 @@ export class InviteListener extends Listener {
 	
 	public async run(message: Message) {
 		if (!message.guild) return;
-		if (!await getSettings(message.guild, 'antiScam') || await hasAtLeastPermissionLevel(message, 3)) return;
+		if (!await getSettings(message.guild, 'antiScam') || !await hasAtLeastPermissionLevel(message, 3)) return;
 
 		const result = await this.containsScamURL(message);
 		if (result.hasScam) {
@@ -24,12 +25,12 @@ export class InviteListener extends Listener {
 
 			const ratelimit = await getScamRatelimit(message.guild, message.author.id);  //reimplement ratelimit for scam
 
-			try {
-				ratelimit.drip();
-			} catch {
+			if (ratelimit.limited) {
 				message.member!.ban({ days: 7, reason: 'Scam Link Spam' });
 				message.client.emit('caseCreate', message, message.guild, message.client.user, message.author, `Anti-Scam RateLimit Exceeded`, 'Banned', '#ff1900');
 			}
+			
+			ratelimit.consume();
 		}
 	}
 

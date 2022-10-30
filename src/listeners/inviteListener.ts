@@ -2,7 +2,8 @@ import { Listener } from '@sapphire/framework';
 import type { Message } from 'discord.js';
 import { DataResolver } from 'discord.js';
 import fetch from 'node-fetch';
-import { hasAtLeastPermissionLevel, getSettings } from '../util/utility.js';
+import { getSettings } from '../util/Settings.js';
+import { hasAtLeastPermissionLevel } from '../util/Utility.js';
 
 type InviteResult = {
 	hasLink: boolean,

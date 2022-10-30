@@ -1,14 +1,16 @@
 import { Command } from '@sapphire/framework';
 import { MessageAttachment } from 'discord.js';
 import { treeView, treeNode } from 'simple-text-tree';
-import { AllSettings } from '../util/constants.js';
-import { getSettings, hasAtLeastPermissionLevel, updateSettings, formatTopic, buildTopicTree,
-	isSettingTopic, isSettingBoolean, isSettingNumber, isSettingStringArray } from '../util/utility.js';
+import { AllSettings } from '../util/Constants.js';
+import { getSettings, updateSettings } from '../util/Settings.js';
+import { isSettingStringArray, isSettingTopic, isSettingBoolean, isSettingNumber } from '../util/Types.js';
+import { buildTopicTree, formatTopic } from '../util/Utility.js';
 
 export class ConfigCommand extends Command {
 	public constructor(context: Command.Context, options: Command.Options) {
 		super(context, {
-			...options
+			...options,
+			requiredUserPermissions: ['BAN_MEMBERS']
 		});
 	}
 
@@ -84,12 +86,11 @@ export class ConfigCommand extends Command {
 		
 		await interaction.client.guilds.fetch(interaction.guildId);
 
-		const hasPerms = await hasAtLeastPermissionLevel(interaction, 6);
-		if (!hasPerms) return interaction.editReply(`You do not have enough permissions to edit the settings.`);
+		const subcmd = this[interaction.options.getSubcommand() as keyof this];
 
-		const subcmd = interaction.options.getSubcommand();
+		if (typeof subcmd === 'function')
 
-		return await (this[subcmd as keyof this] as Function)(interaction);
+		return await subcmd(interaction);
 	}
 
 	async show(interaction: Command.ChatInputInteraction) {

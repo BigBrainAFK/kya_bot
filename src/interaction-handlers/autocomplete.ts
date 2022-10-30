@@ -1,6 +1,6 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
 import type { AutocompleteInteraction } from 'discord.js';
-import { AllSettings, BooleanSettings, NumberSettings, StringArraySettings, Topic } from '../util/constants.js';
+import { AllSettings, BooleanSettings, NumberSettings, StringArraySettings, Topic } from '../util/Constants.js';
 import { distance } from 'fastest-levenshtein';
 
 export class AutocompleteHandler extends InteractionHandler {
@@ -108,7 +108,7 @@ export class AutocompleteHandler extends InteractionHandler {
 						await interaction.client.guilds.fetch(interaction.guildId!);
 					}
 
-					const rawData = await interaction.guild!.client.database.topic.findAll({
+					const rawData = await this.container.database.topic.findAll({
 						where: {
 							guildId: interaction.guildId
 						}

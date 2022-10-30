@@ -1,8 +1,9 @@
 import { DataTypes, Sequelize } from '@sequelize/core';
 import type { Model, ModelStatic } from '@sequelize/core';
-import { initialTopics } from '../util/constants.js';
+import { initialTopics } from '../util/Constants.js';
 import type { Guild } from 'discord.js';
 import type { KyaClient } from './KyaClient.js';
+import { container } from '@sapphire/framework';
 
 type DatabaseOptions = {
 	host: string,
@@ -18,7 +19,16 @@ class PostgresDatabase {
 	private _guilds;
 	private _topic;
 
-	constructor(client: KyaClient, options: DatabaseOptions) {
+	constructor(client: KyaClient, options?: DatabaseOptions) {
+		if (!options) {
+			options = {
+				host: process.env.HOST ?? '',
+				database: process.env.DATABSE ?? '',
+				username: process.env.USERNAME ?? '',
+				password: process.env.PASSWORD ?? ''
+			}
+		}
+		
 		this._dbConn = new Sequelize(
 			{
 				...options,
@@ -151,7 +161,7 @@ class PostgresDatabase {
 	}
 
 	public async createGuild(guild: Guild): Promise<void> {
-		await guild.client.database.guilds.create({
+		await container.database.guilds.create({
 			id: guild.id,
 			topics: initialTopics
 		}, {

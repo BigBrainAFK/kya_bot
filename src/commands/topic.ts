@@ -1,5 +1,5 @@
 import { Command } from '@sapphire/framework';
-import { getTopic } from '../util/utility.js';
+import { getTopic } from '../util/Utility.js';
 
 export class TopicCommand extends Command {
 	public constructor(context: Command.Context, options: Command.Options) {

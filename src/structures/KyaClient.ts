@@ -1,29 +1,22 @@
-import { SapphireClient } from "@sapphire/framework";
-import { ClientOptions, Collection, CommandInteraction, Message, Permissions, TextChannel, ThreadChannel } from "discord.js";
-import { hasModRole, getSettings } from "../util/utility.js";
-import { DatabaseOptions, PostgresDatabase } from "./Database.js";
+import { container, SapphireClient } from "@sapphire/framework";
+import type { RateLimitManager } from '@sapphire/ratelimits';
+import { ClientOptions, Collection, CommandInteraction, Message, TextChannel, ThreadChannel, Permissions } from "discord.js";
+import { getSettings } from "../util/Settings.js";
+import { hasModRole } from "../util/Utility.js";
+import { PostgresDatabase } from "./Database.js";
 import { PermissionLevels } from "./PermissionLevels.js";
-import type { RateLimitManager } from "./RateLimitManager.js";
 
-export interface KyaClientOptions {
-	databaseOptions: DatabaseOptions,
-	permLevels?: PermissionLevels,
-	rateLimits?: Collection<string, RateLimitManager>
-}
-
-export class KyaClient<Ready extends boolean = boolean> extends SapphireClient<Ready> {
-	public override database: PostgresDatabase;
-	public override permLevels: PermissionLevels;
-	public override rateLimits: Collection<string, RateLimitManager>;
-
+export class KyaClient extends SapphireClient {
 	constructor(options: ClientOptions) {
-		super(options);
+		super(options); 
+	}
 
-		this.database = new PostgresDatabase(this, options.databaseOptions);
+	public override async login(token?: string) {
+		container.database = new PostgresDatabase(this);
+		container.rateLimits = new Collection<string, RateLimitManager>();
 
 		const { FLAGS } = Permissions;
-
-		this.permLevels = options.permLevels ?? new PermissionLevels()
+		container.permLevels = new PermissionLevels()
 			.add(0)
 			.add(3, { check: ({ guild, member, channel }: Message) => guild && (<TextChannel | ThreadChannel>channel).permissionsFor(member!.id)!.has(FLAGS.MANAGE_MESSAGES), fetch: true })
 			.add(4, { check: ({ guild, member }: Message) => guild && member!.permissions.has(FLAGS.KICK_MEMBERS), fetch: true })
@@ -32,19 +25,14 @@ export class KyaClient<Ready extends boolean = boolean> extends SapphireClient<R
 			.add(7, { check: ({ guild, member }: Message) => guild && member!.permissions.has([FLAGS.MANAGE_GUILD, FLAGS.ADMINISTRATOR]), fetch: true })
 			.add(8, { check: (message: Message | CommandInteraction) => message.guild && message.type === 'APPLICATION_COMMAND' ? (<CommandInteraction>message).user.id === message.guild!.ownerId : (<Message>message).author.id === message.guild!.ownerId, fetch: true })
 			.add(10, { check: async (message: Message | CommandInteraction) => (await getSettings(message.client, 'owners')).includes(message.type === 'APPLICATION_COMMAND' ? (<CommandInteraction>message).user.id : (<Message>message).author.id) });
-
-		this.rateLimits = options.rateLimits ?? new Collection<string, RateLimitManager>();
+		return super.login(token);
 	}
 }
 
-declare module '@sapphire/framework' {
-	interface SapphireClientOptions extends KyaClientOptions {}
-}
-
-declare module 'discord.js' {
-	interface Client {
-		database: PostgresDatabase,
-		permLevels: PermissionLevels,
-		rateLimits: Collection<string, RateLimitManager>
+declare module '@sapphire/pieces' {
+	interface Container {
+		database: PostgresDatabase;
+		rateLimits: Collection<string, RateLimitManager>;
+		permLevels: PermissionLevels;
 	}
 }
