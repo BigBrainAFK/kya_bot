@@ -1,5 +1,6 @@
 import { Command } from '@sapphire/framework';
 import { Message } from 'discord.js';
+import { commandIdHints } from '../util/Constants';
 
 export class PingCommand extends Command {
 	public constructor(context: Command.Context, options: Command.Options) {
@@ -10,7 +11,7 @@ export class PingCommand extends Command {
 		registry.registerChatInputCommand((builder) => {
 			builder.setName('ping')
 				.setDescription('Ping bot to see if it is alive');
-		}, { idHints: ['1035273297950163005'] });
+		}, { idHints: commandIdHints.ping });
 	}
 
 	public override async chatInputRun(interaction: Command.ChatInputInteraction) {

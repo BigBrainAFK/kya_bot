@@ -130,6 +130,14 @@ const initialTopics: Topic[] = [
 	}
 ]
 
+const commandIdHints = {
+	ping: ['1035273297950163005'],
+	config: ['1035273295664251012'],
+	topic: ['1035274298937589840']
+}
+
+const topicGuildIds = ['160026688930054144'];
+
 export {
 	StringArraySettings,
 	BooleanSettings,
@@ -143,5 +151,7 @@ export {
 	ActionOptions,
 	UpdateData,
 	Topic,
-	initialTopics
+	initialTopics,
+	commandIdHints,
+	topicGuildIds
 }

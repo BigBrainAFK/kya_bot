@@ -1,4 +1,5 @@
 import { Command } from '@sapphire/framework';
+import { commandIdHints, topicGuildIds } from '../util/Constants.js';
 import { getTopic } from '../util/Utility.js';
 
 export class TopicCommand extends Command {
@@ -18,7 +19,7 @@ export class TopicCommand extends Command {
 						.setRequired(true)
 						.setAutocomplete(true);
 				});
-		}, { guildIds: ['160026688930054144'], idHints: ['1035274298937589840'] });
+		}, { guildIds: topicGuildIds, idHints: commandIdHints.topic });
 	}
 
 	public override async chatInputRun(interaction: Command.ChatInputInteraction) {

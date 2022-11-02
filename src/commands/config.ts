@@ -1,7 +1,7 @@
 import { Command } from '@sapphire/framework';
 import { MessageAttachment } from 'discord.js';
 import { treeView, treeNode } from 'simple-text-tree';
-import { AllSettings } from '../util/Constants.js';
+import { AllSettings, commandIdHints } from '../util/Constants.js';
 import { getSettings, updateSettings } from '../util/Settings.js';
 import { isSettingStringArray, isSettingTopic, isSettingBoolean, isSettingNumber } from '../util/Types.js';
 import { buildTopicTree, formatTopic } from '../util/Utility.js';
@@ -74,7 +74,7 @@ export class ConfigCommand extends Command {
 								.setRequired(true)
 						})
 				});
-		}, { idHints: ['1035273295664251012'] });
+		}, { idHints: commandIdHints.config });
 	}
 
 	public override async chatInputRun(interaction: Command.ChatInputInteraction) {
