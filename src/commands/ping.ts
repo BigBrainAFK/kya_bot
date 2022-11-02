@@ -1,6 +1,6 @@
 import { Command } from '@sapphire/framework';
 import { Message } from 'discord.js';
-import { commandIdHints } from '../util/Constants';
+import { commandIdHints } from '../util/Constants.js';
 
 export class PingCommand extends Command {
 	public constructor(context: Command.Context, options: Command.Options) {
