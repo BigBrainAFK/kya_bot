@@ -4,7 +4,7 @@
   "description": "Simple Bot for Wootcord",
   "version": "1.0.2",
   "scripts": {
-    "start": "tsc && node ."
+    "start": "rm -rf dist && npx tsc && node ."
   },
   "directories": {
     "lib": "./src"
@@ -31,7 +31,8 @@
     "dotenv": "^16.0.3",
     "fastest-levenshtein": "^1.0.16",
     "pg": "^8.8.0",
-    "simple-text-tree": "^0.1.2"
+    "simple-text-tree": "^0.1.2",
+    "typescript": "^4.8.4"
   },
   "devDependencies": {
     "@types/validator": "^13.7.10"
