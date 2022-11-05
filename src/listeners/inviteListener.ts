@@ -1,8 +1,8 @@
 import { Listener } from "@sapphire/framework";
 import type { Message } from "discord.js";
 import { DataResolver } from "discord.js";
-import { getSettings } from "src/util/Settings.js";
-import { hasAtLeastPermissionLevel } from "src/util/Utility.js";
+import { getSettings } from "../util/Settings.js";
+import { hasAtLeastPermissionLevel } from "../util/Utility.js";
 import fetch from "node-fetch";
 
 type InviteResult = {
