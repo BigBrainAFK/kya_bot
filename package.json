@@ -7,7 +7,7 @@
     "start": "tsc && node ."
   },
   "directories": {
-    "lib": "src"
+    "lib": "./src"
   },
   "author": {
     "name": "BigBrainAFK",
