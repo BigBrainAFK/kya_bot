@@ -2,7 +2,7 @@
   "name": "kya-bot",
   "main": "dist/index.js",
   "description": "Simple Bot for Wootcord",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "scripts": {
     "start": "rm -rf dist && npx tsc && node ."
   },
