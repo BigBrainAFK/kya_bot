@@ -26,7 +26,7 @@ function isSettingTopic(input: any): input is SettingsOptionTopic {
   return typeof input === "string" && TopicSettings.includes(input);
 }
 
-function isStringArray(input: any): input is String[] {
+function isStringArray(input: any): input is string[] {
   return (
     Array.isArray(input) && !input.some((value) => typeof value !== "string")
   );

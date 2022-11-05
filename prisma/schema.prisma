@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+model guilds {
+  id                           String   @id @db.VarChar(255)
+  roles_mod                    String[] @default(dbgenerated("(ARRAY[]::character varying[])::character varying(255)[]")) @map("roles-mod") @db.VarChar(255)
+  antiInvite                   Boolean  @default(false)
+  antiInvite_whitelistedGuilds String[] @default(dbgenerated("(ARRAY[]::character varying[])::character varying(255)[]")) @map("antiInvite-whitelistedGuilds") @db.VarChar(255)
+  antiScam                     Boolean  @default(false)
+  antiScam_guardedURLs         String[] @default(dbgenerated("(ARRAY[]::character varying[])::character varying(255)[]")) @map("antiScam-guardedURLs") @db.VarChar(255)
+  antiScam_urlLowerBound       Float    @default(0.35) @map("antiScam-urlLowerBound")
+  antiScam_scamLinksAllowed    Int      @default(3) @map("antiScam-scamLinksAllowed")
+  antiScam_timePeriod          Int      @default(15) @map("antiScam-timePeriod")
+  createdAt                    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                    DateTime @updatedAt @db.Timestamptz(6)
+  topics                       topics[]
+}
+
+model topics {
+  id        Int      @unique @default(autoincrement())
+  name      String   @default("") @db.VarChar(255)
+  value     String   @default("") @db.VarChar(255)
+  text      String   @default("") @db.VarChar(1900)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  guildId   String   @db.VarChar(255)
+  guild     guilds?  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@id([guildId, value])
+}

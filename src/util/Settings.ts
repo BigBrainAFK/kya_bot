@@ -1,7 +1,6 @@
-import { container } from "@sapphire/framework";
 import { Guild, Team } from "discord.js";
 import { KyaClient } from "../structures/KyaClient.js";
-import type {
+import {
   SettingsOptionsStringArray,
   SettingsOptionBoolean,
   SettingsOptionNumber,
@@ -9,8 +8,11 @@ import type {
   Topic,
   ActionOptions,
   UpdateData,
+  initialTopics,
 } from "./Constants.js";
 import { isStringArray, isTopic } from "./Types.js";
+import Database from "../structures/Database.js";
+import type { guilds } from "@prisma/client";
 
 async function getSettings(
   instance: KyaClient,
@@ -34,7 +36,7 @@ async function getSettings(
 ): Promise<Topic[]>;
 async function getSettings(
   instance: Guild | KyaClient,
-  setting: any
+  setting: string
 ): Promise<any> {
   if (instance instanceof KyaClient) {
     await instance.application!.fetch();
@@ -45,9 +47,11 @@ async function getSettings(
   }
 
   if (instance instanceof Guild) {
-    const entry = await container.database.getGuildRow(instance);
+    const entry = await getGuildSettings(instance);
 
-    return entry.getDataValue(setting);
+    setting = setting.replace("-", "_");
+
+    return { ...entry }[setting];
   }
 }
 
@@ -77,11 +81,13 @@ async function updateSettings(
 ): Promise<UpdateData>;
 async function updateSettings(
   guild: Guild,
-  setting: any,
+  setting: string,
   data: any,
   action: ActionOptions
 ): Promise<UpdateData> {
-  const entry = await container.database.getGuildRow(guild);
+  const entry = await getGuildSettings(guild);
+
+  setting = setting.replace("-", "_");
 
   let result = true;
   let error = "";
@@ -94,30 +100,47 @@ async function updateSettings(
     case "add":
       if (isTopic(data)) {
         addTopicLoop: for (const single of data) {
-          await container.database.topic
+          await Database.topics
             .create({
-              guildId: guild.id,
-              name: single.name,
-              value: single.value,
-              text: single.text,
+              data: {
+                name: single.name,
+                value: single.value,
+                text: single.text,
+                guild: {
+                  connect: {
+                    id: guild.id,
+                  },
+                },
+              },
+              include: { guild: true },
             })
             .catch(catchFunc);
 
           if (!result) break addTopicLoop;
         }
       } else if (isStringArray(data)) {
-        await entry
-          .update(setting, entry.getDataValue(setting).concat(data))
+        await Database.guilds
+          .update({
+            where: {
+              id: guild.id,
+            },
+            data: {
+              [setting]: ({ ...entry }[setting] as string[]).concat(data),
+            },
+          })
           .catch(catchFunc);
       }
       break;
     case "remove":
       if (isTopic(data)) {
         removeTopicLoop: for (const single of data) {
-          await container.database.topic
-            .destroy({
+          await Database.topics
+            .delete({
               where: {
-                value: single.value,
+                guildId_value: {
+                  guildId: guild.id,
+                  value: single.value,
+                },
               },
             })
             .catch(catchFunc);
@@ -125,36 +148,75 @@ async function updateSettings(
           if (!result) break removeTopicLoop;
         }
       } else if (isStringArray(data)) {
-        await entry
-          .update(
-            setting,
-            entry
-              .getDataValue(setting)
-              .filter((value: string) => !data.includes(value))
-          )
+        await Database.guilds
+          .update({
+            where: {
+              id: guild.id,
+            },
+            data: {
+              [setting]: ({ ...entry }[setting] as string[]).filter(
+                (value) => !data.includes(value)
+              ),
+            },
+          })
           .catch(catchFunc);
       }
       break;
     case "replace":
       if (isTopic(data)) {
         replaceTopicLoop: for (const single of data) {
-          await container.database.topic
-            .update(single, {
+          await Database.topics
+            .update({
               where: {
-                value: single.value,
+                guildId_value: {
+                  guildId: guild.id,
+                  value: single.value,
+                },
               },
+              data: single,
             })
             .catch(catchFunc);
 
           if (!result) break replaceTopicLoop;
         }
       } else {
-        await entry.update(setting, data).catch(catchFunc);
+        await Database.guilds
+          .update({
+            where: {
+              id: guild.id,
+            },
+            data: {
+              [setting]: data,
+            },
+          })
+          .catch(catchFunc);
       }
       break;
   }
 
   return { result, error };
+}
+
+async function getGuildSettings(guild: Guild): Promise<guilds> {
+  const retrievedGuild = await Database.guilds.findUnique({
+    where: { id: guild.id },
+    include: { topics: true },
+  });
+
+  if (retrievedGuild === null) {
+    return await Database.guilds.create({
+      data: {
+        id: guild.id,
+        topics: {
+          createMany: {
+            data: initialTopics,
+          },
+        },
+      },
+    });
+  }
+
+  return retrievedGuild;
 }
 
 export { getSettings, updateSettings };

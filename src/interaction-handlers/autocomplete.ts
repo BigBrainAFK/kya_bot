@@ -7,11 +7,13 @@ import type { AutocompleteInteraction } from "discord.js";
 import {
   AllSettings,
   BooleanSettings,
+  commandIdHints,
   NumberSettings,
   StringArraySettings,
   Topic,
 } from "../util/Constants.js";
 import { distance } from "fastest-levenshtein";
+import Database from "../structures/Database.js";
 
 export class AutocompleteHandler extends InteractionHandler {
   public constructor(ctx: PieceContext, options: InteractionHandler.Options) {
@@ -29,7 +31,7 @@ export class AutocompleteHandler extends InteractionHandler {
   }
 
   public override async parse(interaction: AutocompleteInteraction) {
-    const autoCompleteCmds = ["1035273295664251012", "1035274298937589840"];
+    const autoCompleteCmds = commandIdHints.config.concat(commandIdHints.topic);
     if (autoCompleteCmds.includes(interaction.commandId)) {
       const focusedOption = interaction.options.getFocused(true);
 
@@ -123,9 +125,9 @@ export class AutocompleteHandler extends InteractionHandler {
             await interaction.client.guilds.fetch(interaction.guildId!);
           }
 
-          const rawData = await this.container.database.topic.findAll({
+          const rawData = await Database.topics.findMany({
             where: {
-              guildId: interaction.guildId,
+              guildId: interaction.guildId!,
             },
           });
 
@@ -135,9 +137,9 @@ export class AutocompleteHandler extends InteractionHandler {
             rawData
               .map((value) => {
                 return {
-                  name: value.get("name"),
-                  value: value.get("value"),
-                  text: value.get("text"),
+                  name: value.name,
+                  value: value.value,
+                  text: value.text,
                 } as Topic;
               })
               // most basic pre filtering to only include options that contain the inserted string

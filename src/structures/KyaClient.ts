@@ -11,7 +11,6 @@ import {
 } from "discord.js";
 import { getSettings } from "../util/Settings.js";
 import { hasModRole } from "../util/Utility.js";
-import { PostgresDatabase } from "./Database.js";
 import { PermissionLevels } from "./PermissionLevels.js";
 
 export class KyaClient extends SapphireClient {
@@ -20,7 +19,6 @@ export class KyaClient extends SapphireClient {
   }
 
   public override async login(token?: string) {
-    container.database = new PostgresDatabase(this);
     container.rateLimits = new Collection<string, RateLimitManager>();
 
     const { FLAGS } = Permissions;
@@ -76,7 +74,6 @@ export class KyaClient extends SapphireClient {
 
 declare module "@sapphire/pieces" {
   interface Container {
-    database: PostgresDatabase;
     rateLimits: Collection<string, RateLimitManager>;
     permLevels: PermissionLevels;
   }
