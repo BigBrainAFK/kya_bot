@@ -1,6 +1,7 @@
-require("dotenv").config();
-const { REST } = require("@discordjs/rest");
-const { Routes } = require("discord-api-types/v9");
+import * as dotenv from "dotenv";
+dotenv.config();
+import { REST } from "@discordjs/rest";
+import { Routes } from "discord-api-types/v9";
 
 const token = process.env.TOKEN;
 const clientId = "";
