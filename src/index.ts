@@ -1,7 +1,9 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-
+import { topicGuildIds } from "./util/Constants.js";
 import { KyaClient } from "./structures/KyaClient.js";
+
+if (!topicGuildIds.length) throw Error("Specify topic guild ids");
 
 const client = new KyaClient({
   defaultPrefix: "!",
