@@ -3,6 +3,9 @@
   "main": "dist/index.js",
   "description": "Simple Bot for Wootcord",
   "version": "1.0.2",
+  "scripts": {
+    "start": "tsc && node ."
+  },
   "directories": {
     "lib": "src"
   },
