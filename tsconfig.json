@@ -19,9 +19,8 @@
 
     // Modules
     "module": "ESNext",
-    "moduleResolution": "classic",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "baseUrl": ".",
 
     // Emit
     "declaration": true,
