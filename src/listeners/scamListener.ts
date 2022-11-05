@@ -1,7 +1,7 @@
 import { Listener } from '@sapphire/framework';
 import type { Message } from 'discord.js';
-import { getSettings } from '../util/Settings.js';
-import { getScamRatelimit, diceCoefficient, hasAtLeastPermissionLevel } from '../util/Utility.js';
+import { getSettings } from 'src/util/Settings.js';
+import { getScamRatelimit, diceCoefficient, hasAtLeastPermissionLevel } from 'src/util/Utility.js';
 
 export class InviteListener extends Listener {
 	public constructor(context: Listener.Context, options: Listener.Options) {
