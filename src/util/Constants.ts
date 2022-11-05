@@ -142,12 +142,12 @@ const initialTopics: Topic[] = [
 ];
 
 const commandIdHints = {
-  ping: ["1038418151756546099"],
-  config: ["1038418149369974828"],
-  topic: ["1038418154193436812"],
+  ping: [],
+  config: [],
+  topic: [],
 };
 
-const topicGuildIds: string[] = ["160026688930054144"];
+const topicGuildIds: string[] = [];
 
 export {
   StringArraySettings,
