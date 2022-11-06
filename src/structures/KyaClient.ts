@@ -72,6 +72,7 @@ export class KyaClient extends SapphireClient {
   }
 }
 
+// Use module augmentation to adjust container DI to keep our Data aswell
 declare module "@sapphire/pieces" {
   interface Container {
     rateLimits: Collection<string, RateLimitManager>;
