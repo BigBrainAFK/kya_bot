@@ -7,7 +7,8 @@ import {
   Message,
   TextChannel,
   ThreadChannel,
-  Permissions,
+  InteractionType,
+  PermissionFlagsBits,
 } from "discord.js";
 import { getSettings } from "../util/Settings.js";
 import { hasModRole } from "../util/Utility.js";
@@ -21,7 +22,6 @@ export class KyaClient extends SapphireClient {
   public override async login(token?: string) {
     container.rateLimits = new Collection<string, RateLimitManager>();
 
-    const { FLAGS } = Permissions;
     container.permLevels = new PermissionLevels()
       .add(0)
       .add(3, {
@@ -29,17 +29,17 @@ export class KyaClient extends SapphireClient {
           guild &&
           (<TextChannel | ThreadChannel>channel)
             .permissionsFor(member!.id)!
-            .has(FLAGS.MANAGE_MESSAGES),
+            .has(PermissionFlagsBits.ManageMessages),
         fetch: true,
       })
       .add(4, {
         check: ({ guild, member }: Message) =>
-          guild && member!.permissions.has(FLAGS.KICK_MEMBERS),
+          guild && member!.permissions.has(PermissionFlagsBits.KickMembers),
         fetch: true,
       })
       .add(5, {
         check: ({ guild, member }: Message) =>
-          guild && member!.permissions.has(FLAGS.BAN_MEMBERS),
+          guild && member!.permissions.has(PermissionFlagsBits.BanMembers),
         fetch: true,
       })
       .add(6, {
@@ -50,22 +50,25 @@ export class KyaClient extends SapphireClient {
       .add(7, {
         check: ({ guild, member }: Message) =>
           guild &&
-          member!.permissions.has([FLAGS.MANAGE_GUILD, FLAGS.ADMINISTRATOR]),
+          member!.permissions.has([
+            PermissionFlagsBits.ManageGuild,
+            PermissionFlagsBits.Administrator,
+          ]),
         fetch: true,
       })
       .add(8, {
         check: (message: Message | CommandInteraction) =>
-          message.guild && message.type === "APPLICATION_COMMAND"
-            ? (<CommandInteraction>message).user.id === message.guild!.ownerId
-            : (<Message>message).author.id === message.guild!.ownerId,
+          message.guild && message.type === InteractionType.ApplicationCommand
+            ? message.user.id === message.guild!.ownerId
+            : (message as Message).author.id === message.guild!.ownerId,
         fetch: true,
       })
       .add(10, {
         check: async (message: Message | CommandInteraction) =>
           (await getSettings(message.client, "owners")).includes(
-            message.type === "APPLICATION_COMMAND"
-              ? (<CommandInteraction>message).user.id
-              : (<Message>message).author.id
+            message.type === InteractionType.ApplicationCommand
+              ? message.user.id
+              : message.author.id
           ),
       });
     return super.login(token);

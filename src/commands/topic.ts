@@ -28,7 +28,7 @@ export class TopicCommand extends Command {
   }
 
   public override async chatInputRun(
-    interaction: Command.ChatInputInteraction
+    interaction: Command.ChatInputCommandInteraction
   ) {
     await interaction.deferReply({
       ephemeral: true,

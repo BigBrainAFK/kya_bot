@@ -1,4 +1,4 @@
-import type { Message, CommandInteraction } from "discord.js";
+import { Message, CommandInteraction, InteractionType } from "discord.js";
 import { Collection } from "discord.js";
 
 const empty = Symbol("empty");
@@ -98,9 +98,9 @@ class PermissionLevels extends Collection<
       if (level === empty) continue;
       if ((<PermissionLevelOptions>level).fetch && message.guild)
         await message.guild.members.fetch(
-          message.type === "APPLICATION_COMMAND"
-            ? (<CommandInteraction>message).user
-            : (<Message>message).author
+          message.type === InteractionType.ApplicationCommand
+            ? message.user
+            : message.author
         );
       const res = await (<PermissionLevelOptions>level).check(message);
       if (res) return { broke: false, permission: true };

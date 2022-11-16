@@ -142,12 +142,17 @@ const initialTopics: Topic[] = [
 ];
 
 const commandIdHints = {
-  ping: [],
-  config: [],
-  topic: [],
+  ping: ["1038418151756546099"],
+  config: ["1038418149369974828"],
+  topic: ["1038418154193436812"],
+  cleanup: ["1042474461196206111"],
 };
 
-const topicGuildIds: string[] = [];
+const channelIdHints = {
+  support: "1019755933959733258",
+};
+
+const topicGuildIds: string[] = ["160026688930054144"];
 
 export {
   StringArraySettings,
@@ -164,5 +169,6 @@ export {
   Topic,
   initialTopics,
   commandIdHints,
+  channelIdHints,
   topicGuildIds,
 };

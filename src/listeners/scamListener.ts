@@ -55,7 +55,10 @@ export class InviteListener extends Listener {
       ); //reimplement ratelimit for scam
 
       if (ratelimit.limited) {
-        message.member!.ban({ days: 7, reason: "Scam Link Spam" });
+        message.member!.ban({
+          deleteMessageSeconds: 7 * 24 * 60 * 60,
+          reason: "Scam Link Spam",
+        });
         message.client.emit(
           "caseCreate",
           message,

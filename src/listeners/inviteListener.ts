@@ -61,7 +61,8 @@ export class InviteListener extends Listener {
     const URLRegex =
       /(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([-.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?/gi;
 
-    const messageDiscordGGLinks = message.content.match(discordGGRegex) || [];
+    const messageDiscordGGLinks: string[] =
+      message.content.match(discordGGRegex) || [];
     const messageLinks = message.content.match(URLRegex);
 
     if (

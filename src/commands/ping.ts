@@ -19,7 +19,7 @@ export class PingCommand extends Command {
   }
 
   public override async chatInputRun(
-    interaction: Command.ChatInputInteraction
+    interaction: Command.ChatInputCommandInteraction
   ) {
     const msg = await interaction.reply({
       content: `Ping?`,

@@ -1,5 +1,5 @@
 import { Command } from "@sapphire/framework";
-import { MessageAttachment } from "discord.js";
+import { AttachmentBuilder } from "discord.js";
 import { treeView, treeNode } from "simple-text-tree";
 import { AllSettings, commandIdHints } from "../util/Constants.js";
 import { getSettings, updateSettings } from "../util/Settings.js";
@@ -15,7 +15,7 @@ export class ConfigCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
     super(context, {
       ...options,
-      requiredUserPermissions: ["BAN_MEMBERS"],
+      requiredUserPermissions: ["BanMembers"],
     });
   }
 
@@ -98,7 +98,7 @@ export class ConfigCommand extends Command {
   }
 
   public override async chatInputRun(
-    interaction: Command.ChatInputInteraction
+    interaction: Command.ChatInputCommandInteraction
   ) {
     await interaction.deferReply({
       ephemeral: true,
@@ -116,7 +116,7 @@ export class ConfigCommand extends Command {
     if (typeof subcmd === "function") return await subcmd(interaction);
   }
 
-  async show(interaction: Command.ChatInputInteraction) {
+  async show(interaction: Command.ChatInputCommandInteraction) {
     const option = interaction.options.getString("option");
 
     // All options processing
@@ -168,9 +168,9 @@ export class ConfigCommand extends Command {
         return interaction.editReply({
           content: `Here is the current config`,
           files: [
-            new MessageAttachment(
+            new AttachmentBuilder(
               Buffer.from(`Current configuration\n${treeText}`, "utf-8"),
-              `config_${Date.now().toLocaleString()}.txt`
+              { name: `config_${Date.now().toLocaleString()}.txt` }
             ),
           ],
         });
@@ -195,9 +195,9 @@ export class ConfigCommand extends Command {
           return interaction.editReply({
             content: `Setting \`${option}\`:`,
             files: [
-              new MessageAttachment(
+              new AttachmentBuilder(
                 Buffer.from(`Setting \`${option}\`:\n${concated}`, "utf-8"),
-                `${option}_${Date.now().toLocaleString()}.txt`
+                { name: `${option}_${Date.now().toLocaleString()}.txt` }
               ),
             ],
           });
@@ -215,9 +215,9 @@ export class ConfigCommand extends Command {
           return interaction.editReply({
             content: `Setting \`${option}\`:`,
             files: [
-              new MessageAttachment(
+              new AttachmentBuilder(
                 Buffer.from(`Setting \`${option}\`:\n${treeText}`, "utf-8"),
-                `${option}_${Date.now().toLocaleString()}.txt`
+                { name: `${option}_${Date.now().toLocaleString()}.txt` }
               ),
             ],
           });
@@ -238,7 +238,7 @@ export class ConfigCommand extends Command {
     }
   }
 
-  async set(interaction: Command.ChatInputInteraction) {
+  async set(interaction: Command.ChatInputCommandInteraction) {
     const value = interaction.options
       .getString("value-to-set")!
       .replace("\n", "");
@@ -292,7 +292,7 @@ export class ConfigCommand extends Command {
     );
   }
 
-  async add(interaction: Command.ChatInputInteraction) {
+  async add(interaction: Command.ChatInputCommandInteraction) {
     const value = interaction.options
       .getString("value-to-add")!
       .replace("\n", "");
@@ -361,7 +361,7 @@ export class ConfigCommand extends Command {
     );
   }
 
-  async remove(interaction: Command.ChatInputInteraction) {
+  async remove(interaction: Command.ChatInputCommandInteraction) {
     const value = interaction.options.getString("value-to-remove")!;
     const option = interaction.options.getString("option");
 
