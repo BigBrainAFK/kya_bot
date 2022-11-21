@@ -41,5 +41,6 @@
   },
   "devDependencies": {
     "@types/validator": "^13.7.10"
-  }
+  },
+  "packageManager": "yarn@3.3.0"
 }
