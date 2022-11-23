@@ -21,7 +21,8 @@
   },
   "type": "module",
   "engines": {
-    "node": "^19.0.0"
+    "node": ">=19.0.0 <20.0.0",
+    "yarn": "^3.3.0"
   },
   "dependencies": {
     "@discordjs/rest": "^1.3.0",
