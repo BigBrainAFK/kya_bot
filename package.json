@@ -21,7 +21,7 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=19.0.0 <20.0.0",
+    "node": ">=16.0.0 <20.0.0",
     "yarn": "^3.3.0"
   },
   "dependencies": {
