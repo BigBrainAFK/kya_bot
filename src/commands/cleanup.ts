@@ -50,13 +50,15 @@ export class CleanupCommand extends Command {
     await supportChannel.threads.fetch();
 
     for (const thread of supportChannel.threads.cache.values()) {
+      if (thread.locked) thread.setLocked(false, "Undo lock");
+
       for (const tagId of thread.appliedTags) {
         const tag = supportChannel.availableTags.find((el) => el.id === tagId);
 
         if (tag === undefined) continue;
 
         if (tag.name === "Resolved") {
-          thread.setLocked(true, "Flagged as resolved");
+          thread.setArchived(true, "Flagged as resolved");
         }
       }
     }
