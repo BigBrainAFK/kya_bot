@@ -57,7 +57,7 @@ export class CleanupCommand extends Command {
 
         if (tag === undefined) continue;
 
-        if (tag.name === "Resolved") {
+        if (tag.name === "Resolved" && !thread.archived) {
           thread.setArchived(true, "Flagged as resolved");
         }
       }
