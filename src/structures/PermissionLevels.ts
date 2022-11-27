@@ -96,12 +96,16 @@ class PermissionLevels extends Collection<
     for (let i = min; i < this.size; i++) {
       const level = this.get(i);
       if (level === empty) continue;
+      const idToCheck =
+        message.type === InteractionType.ApplicationCommand
+          ? message.user
+          : message.author;
       if ((<PermissionLevelOptions>level).fetch && message.guild)
-        await message.guild.members.fetch(
-          message.type === InteractionType.ApplicationCommand
-            ? message.user
-            : message.author
-        );
+        await message.guild.members
+          .fetch(idToCheck)
+          .catch(message.client.logger.warn);
+      if (!message.guild?.members.cache.has(idToCheck.id))
+        return { broke: false, permission: false };
       const res = await (<PermissionLevelOptions>level).check(message);
       if (res) return { broke: false, permission: true };
       if ((<PermissionLevelOptions>level).break)
