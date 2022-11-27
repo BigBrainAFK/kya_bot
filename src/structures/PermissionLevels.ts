@@ -93,6 +93,7 @@ class PermissionLevels extends Collection<
     message: Message | CommandInteraction,
     min: number
   ): Promise<PermissionLevelData> {
+    if (!message.guildId) return { broke: false, permission: false };
     for (let i = min; i < this.size; i++) {
       const level = this.get(i);
       if (level === empty) continue;
