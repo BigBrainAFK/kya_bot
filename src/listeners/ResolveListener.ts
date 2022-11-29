@@ -25,8 +25,14 @@ export class ResolveListener extends Listener {
 
         if (tag === undefined) continue;
 
-        if (tag.name === "Resolved" && !newThread.archived) {
-          newThread.setArchived(true, "Flagged as resolved");
+        if (tag.name === "Resolved") {
+          if (!newThread.archived) {
+            newThread.setArchived(true, "Flagged as resolved");
+          } else {
+            newThread.edit({
+              appliedTags: newThread.appliedTags.filter((t) => t !== tagId),
+            });
+          }
         }
       }
     }
