@@ -10,7 +10,7 @@ export class ResolveListener extends Listener {
     });
   }
 
-  public async run(_: ThreadChannel, newThread: ThreadChannel) {
+  public async run(oldThread: ThreadChannel, newThread: ThreadChannel) {
     if (newThread.parentId === null) return;
 
     await newThread.guild.channels.fetch(newThread.parentId);
@@ -27,11 +27,14 @@ export class ResolveListener extends Listener {
 
         if (tag.name === "Resolved") {
           if (!newThread.archived) {
-            newThread.setArchived(true, "Flagged as resolved");
-          } else {
-            newThread.edit({
-              appliedTags: newThread.appliedTags.filter((t) => t !== tagId),
-            });
+            if (!oldThread.archived) {
+              newThread.setArchived(true, "Flagged as resolved");
+            } else if (oldThread.archived) {
+              newThread.setArchived(false, "New activity");
+              newThread.edit({
+                appliedTags: newThread.appliedTags.filter((t) => t !== tagId),
+              });
+            }
           }
         }
       }
