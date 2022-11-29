@@ -31,7 +31,7 @@ export class TopicCommand extends Command {
     interaction: Command.ChatInputCommandInteraction
   ) {
     await interaction.deferReply({
-      ephemeral: true,
+      ephemeral: false,
     });
 
     const choice = interaction.options.getString("inquiry");
